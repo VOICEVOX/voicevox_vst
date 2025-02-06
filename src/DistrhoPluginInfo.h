@@ -5,17 +5,15 @@
 // ここで<vector>をincludeすると何故か治る。
 #include <vector>
 
-// #define DISTRHO_PLUGIN_BRAND "Nanashi."
 #define DISTRHO_PLUGIN_BRAND "Voicevox"
 #ifdef DEBUG
 #define DISTRHO_PLUGIN_NAME "VOICEVOX (Debug)"
 #else
 #define DISTRHO_PLUGIN_NAME "VOICEVOX"
 #endif
-#define DISTRHO_PLUGIN_URI "https://github.com/sevenc-nanashi/vvvst-dpf-rust/"
+#define DISTRHO_PLUGIN_URI "https://github.com/voicevox/voicevox_vst"
 
-// #define DISTRHO_PLUGIN_BRAND_ID Vcvx
-#define DISTRHO_PLUGIN_BRAND_ID ScNs
+#define DISTRHO_PLUGIN_BRAND_ID Vcvx
 
 #ifdef DEBUG
 #define DISTRHO_PLUGIN_UNIQUE_ID VvsD
@@ -23,11 +21,10 @@
 #define DISTRHO_PLUGIN_UNIQUE_ID Vvst
 #endif
 
-// #define DISTRHO_PLUGIN_CLAP_ID "jp.hiroshiba.vvvst"
 #ifdef DEBUG
-#define DISTRHO_PLUGIN_CLAP_ID "com.sevenc-nanashi.vvvst-dpf-rust-debug"
+#define DISTRHO_PLUGIN_CLAP_ID "jp.hiroshiba.voicevox-vst-debug"
 #else
-#define DISTRHO_PLUGIN_CLAP_ID "com.sevenc-nanashi.vvvst-dpf-rust"
+#define DISTRHO_PLUGIN_CLAP_ID "jp.hiroshiba.voicevox-vst"
 #endif
 
 #define DISTRHO_PLUGIN_HAS_UI 1

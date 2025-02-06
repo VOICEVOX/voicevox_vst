@@ -35,14 +35,14 @@ const char *VvvstPlugin::getDescription() const {
    Get the plugin author/maker.
  */
 const char *VvvstPlugin::getMaker() const {
-  return "Nanashi. (https://sevenc7c.com)";
+  return "Voicevox Developers";
 }
 
 /**
    Get the plugin homepage.
  */
 const char *VvvstPlugin::getHomePage() const {
-  return "https://github.com/sevenc-nanashi/vvvst-dpf-rust/";
+  return "https://github.com/voicevox/voicevox_vst";
 }
 
 /**

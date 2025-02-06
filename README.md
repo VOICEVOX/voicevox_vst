@@ -4,9 +4,10 @@ VOICEVOX エディタの VST/AU プラグイン。
 
 ## 開発
 
-- エディタをクローンして`npm run vst:serve`すると VST 用のエディタが立ち上がります
-- Release ビルドするときはエディタを`npm run vst:build`し、`dist`内を`resources/editor`にコピーしてください
-- `cargo xtask` に色々置いてあります
+- エディタはこちらです： <https://github.com/voicevox/voicevox/tree/project-vst>
+- エディタをクローンして`npm run vst:serve`すると VST 用のエディタが立ち上がります。
+- Release ビルドするときはエディタを`npm run vst:build`し、`dist`内を`resources/editor`にコピーしてください。
+- `cargo xtask` にビルドスクリプトがあります。
 
 ## ビルド
 
@@ -26,9 +27,7 @@ Options:
 
 ### Windows用インストーラー
 
-依存：
-
-- [NSIS](https://nsis.sourceforge.io/Main_Page)（3.09 で動作確認）
+[NSIS](https://nsis.sourceforge.io/Main_Page) が必要です。
 
 ```bash
 ❯ cargo xtask generate-installer --help
@@ -77,28 +76,9 @@ Options:
 
 ## 仕組み
 
-```mermaid
-sequenceDiagram
-    participant daw as DAW（VST3ホスト）
-    participant cpp as VVVST（C++）
-    participant rust as VVVST（Rust）
-    participant vue as Voicevox Editor
+- 全体の構成については [./docs/architecture.md](./docs/architecture.md) を参照してください。
+- 起動シーケンスなどについては [./docs/sequences.md](./docs/sequences.md) を参照してください。
 
-    daw->>cpp: 音声取得（run）
-    cpp->>rust: plugin_run
-    rust->>cpp: 書き込んで返す
-    cpp->>daw: 波形送信
-    daw->>cpp: 再生情報
-    opt 再生情報が変更されたら
-      cpp->>rust: plugin_run
-      rust->>vue: 情報送信
-      Note over vue: UIロックとか再生位置移動とか
-    end
+## ライセンス
 
-    opt エディタのフレーズが更新されたら
-        vue->>rust: タイミング、SingingVoiceKey
-        rust->>vue: 不足しているSingingVoiceKeyの一覧
-        vue->>rust: SingingVoice
-        Note over rust: wavパース&再サンプル->ミックスダウン作成 @ 別スレッド
-    end
-```
+このリポジトリは LGPL-3.0 ライセンスの下で公開されています。
