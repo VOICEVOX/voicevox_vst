@@ -1,9 +1,6 @@
 # VOICEVOX VST
 
-Voicevox の VST プラグイン。
-
-エディタ側：<https://github.com/sevenc-nanashi/voicevox/tree/add/vst>  
-Issue：<https://github.com/VOICEVOX/voicevox_project/issues/45>
+VOICEVOX エディタの VST/AU プラグイン。
 
 ## 開発
 
