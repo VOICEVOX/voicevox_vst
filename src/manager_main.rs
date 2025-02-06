@@ -82,7 +82,7 @@ async fn main() -> Result<()> {
     let store_path = manager_path().join("store");
     if !manager_path().exists() {
         info!("creating manager directory");
-        std::fs::create_dir_all(&manager_path())?;
+        std::fs::create_dir_all(manager_path())?;
     }
     debug!("lock_path: {:?}", lock_path);
     debug!("state_path: {:?}", state_path);

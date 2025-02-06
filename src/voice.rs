@@ -14,7 +14,7 @@ impl Serialize for Voice {
 impl<'de> Deserialize<'de> for Voice {
     fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         let bytes = serde_bytes::ByteBuf::deserialize(deserializer)?;
-        Ok(Voice::new(bytes.to_vec()).map_err(serde::de::Error::custom)?)
+        Voice::new(bytes.to_vec()).map_err(serde::de::Error::custom)
     }
 }
 impl std::fmt::Debug for Voice {
@@ -46,7 +46,7 @@ impl Voice {
     }
 
     pub fn duration(&self) -> f32 {
-        (self.samples_len as f32) / (self.sample_rate as f32)
+        (self.samples_len as f32) / self.sample_rate
     }
 
     pub fn reader(&self) -> wav_io::reader::Reader {

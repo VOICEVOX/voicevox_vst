@@ -1,0 +1,37 @@
+name: "Check"
+
+on:
+  push:
+  pull_request:
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Colorize
+        run: |
+          echo "CLICOLOR_FORCE=1" >> $GITHUB_ENV
+      - name: Checkout VST
+        uses: actions/checkout@v4
+        with:
+          submodules: "recursive"
+      - name: Setup Rust
+        run: rustup toolchain install stable --profile minimal
+
+      - name: Cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libglib2.0-dev libgtk-3-dev libsoup-3.0-dev libjavascriptcoregtk-4.1-dev libwebkit2gtk-4.1-dev libasound2-dev
+
+      - name: Check
+        run: |
+          cargo clippy --all-features -- -D warnings
+          cargo fmt -- --check
+          cargo test --all-features

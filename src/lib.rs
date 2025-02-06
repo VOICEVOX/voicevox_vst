@@ -166,11 +166,7 @@ unsafe extern "C-unwind" fn plugin_ui_new(
 }
 
 #[no_mangle]
-unsafe extern "C-unwind" fn plugin_ui_set_size(
-    plugin_ui: &PluginUi,
-    width: usize,
-    height: usize,
-) {
+unsafe extern "C-unwind" fn plugin_ui_set_size(plugin_ui: &PluginUi, width: usize, height: usize) {
     let plugin_ui = plugin_ui.inner.blocking_lock();
     if let Err(err) = plugin_ui.set_size(width, height) {
         error!("Failed to set size: {}", err);

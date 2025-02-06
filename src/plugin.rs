@@ -43,10 +43,8 @@ impl PluginImpl {
     pub fn new(params: PluginParams, critical_params: CriticalPluginParams) -> Self {
         INIT.call_once(|| {
             let log_dir = common::log_dir();
-            if !log_dir.exists() {
-                if fs_err::create_dir_all(&log_dir).is_err() {
-                    return;
-                }
+            if !log_dir.exists() && fs_err::create_dir_all(&log_dir).is_err() {
+                return;
             }
             let dest = log_dir.join(format!(
                 "{}-plugin.log",
@@ -191,7 +189,7 @@ impl PluginImpl {
             let updated_sections = updated_sections.entry(phrase.track_id.clone()).or_default();
             let start = (phrase.start * sample_rate).floor() as usize;
 
-            let end = start + (phrase.duration(voices) * sample_rate as f32) as usize;
+            let end = start + (phrase.duration(voices) * sample_rate) as usize;
             let start_section = start / FRAMES_PER_SECTION;
             let end_section = end / FRAMES_PER_SECTION;
             if samples_len < end {
@@ -200,8 +198,12 @@ impl PluginImpl {
             if end_section >= updated_sections.len() {
                 updated_sections.resize(end_section + 1, false);
             }
-            for section in start_section..=end_section {
-                updated_sections[section] = true;
+            for section in updated_sections
+                .iter_mut()
+                .take(end_section + 1)
+                .skip(start_section)
+            {
+                *section = true;
             }
         }
 
@@ -212,7 +214,7 @@ impl PluginImpl {
         let mut computed_phrases = 0;
         for phrase in phrases {
             let start = (phrase.start * sample_rate).floor() as usize;
-            let end = start + (phrase.duration(voices) * sample_rate as f32) as usize;
+            let end = start + (phrase.duration(voices) * sample_rate) as usize;
             let start_section = start / FRAMES_PER_SECTION;
             let end_section = end / FRAMES_PER_SECTION;
             let mut updated = false;
@@ -249,13 +251,13 @@ impl PluginImpl {
                         samples_len = end as usize;
                     }
                 }
-                for i in 0..samples.len() {
+                for (i, sample) in samples.iter().enumerate() {
                     let frame = start + i as isize;
                     if frame < 0 {
                         continue;
                     }
                     let frame = frame as usize;
-                    new_samples[frame] = new_samples[frame].saturating_add(samples[i]);
+                    new_samples[frame] = new_samples[frame].saturating_add(*sample);
                 }
             } else {
                 for note in phrase.notes.iter() {
@@ -275,7 +277,7 @@ impl PluginImpl {
                         }
                         let mut frame = start;
                         while let Some(sample) = synth.process() {
-                            new_samples[frame] = new_samples[frame].saturating_add(sample as f32);
+                            new_samples[frame] = new_samples[frame].saturating_add(sample);
                             frame += 1;
                             if frame == end {
                                 synth.note_off();
@@ -287,8 +289,8 @@ impl PluginImpl {
         }
 
         let num_updated_sections = updated_sections
-            .iter()
-            .map(|(_, v)| v.iter().filter(|&&b| b).count())
+            .values()
+            .map(|v| v.iter().filter(|&&b| b).count())
             .sum::<usize>();
 
         let mut mix = mix.write().await;
@@ -386,6 +388,10 @@ impl PluginImpl {
         }
     }
 
+    #[allow(
+        clippy::too_many_arguments,
+        reason = "わざわざstructに分けるほどでもない"
+    )]
     fn write_mix(
         &self,
         this_ref: &Arc<Mutex<PluginImpl>>,
@@ -397,7 +403,7 @@ impl PluginImpl {
         current_sample: i64,
     ) {
         if mix.sample_rate != sample_rate {
-            let this_ref = Arc::clone(&this_ref);
+            let this_ref = Arc::clone(this_ref);
             RUNTIME
                 .lock()
                 .unwrap()

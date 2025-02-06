@@ -104,8 +104,10 @@ jobs:
             name: "windows"
           - os: macos-latest
             name: "macos"
-          - os: ubuntu-24.04
-            name: "linux"
+          # engine-managerがまだAppImageに対応していないため、Ubuntuのビルドを一時的に無効化している。
+          # TODO: 対応させたらコメントアウトを外す
+          # - os: ubuntu-24.04
+          #   name: "linux"
     runs-on: ${{ matrix.os }}
     steps:
       - name: Colorize

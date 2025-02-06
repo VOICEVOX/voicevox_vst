@@ -16,7 +16,7 @@ pub fn release_log_dir() -> std::path::PathBuf {
 /// ログを出力するディレクトリのパスを返す。
 /// もし存在しなかったらディレクトリを作成する。
 pub fn log_dir() -> std::path::PathBuf {
-    let output_log_in_workspace = option_env!("VVVST_LOG").map_or(false, |v| v.len() > 0);
+    let output_log_in_workspace = option_env!("VVVST_LOG").map_or(false, |v| !v.is_empty());
 
     if output_log_in_workspace {
         debug_log_dir()

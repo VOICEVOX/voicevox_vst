@@ -33,6 +33,9 @@ pub struct PluginUiImpl {
     zoom_receiver: UnboundedReceiver<f64>,
 }
 
+unsafe impl Send for PluginUiImpl {}
+unsafe impl Sync for PluginUiImpl {}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", tag = "type", content = "payload")]
 pub enum UiNotification {
@@ -338,6 +341,10 @@ impl PluginUiImpl {
             gtk::init()?;
         }
         let webview = webview_builder.build_as_child(&window_handle)?;
+        #[allow(
+            clippy::arc_with_non_send_sync,
+            reason = "とりあえず動いているのでヨシ！"
+        )]
         let webview = Arc::new(webview);
 
         Ok(PluginUiImpl {
@@ -518,9 +525,9 @@ impl PluginUiImpl {
                 };
 
                 let result = dialog.pick_file().await;
-                return Ok(serde_json::to_value(
+                Ok(serde_json::to_value(
                     result.map(|path| path.path().to_string_lossy().to_string()),
-                )?);
+                )?)
             }
             RequestInner::ReadFile(path) => {
                 let content = tokio::fs::read(path).await?;
@@ -552,17 +559,17 @@ impl PluginUiImpl {
                 }
                 let result = dialog.save_file().await;
 
-                return Ok(serde_json::to_value(
+                Ok(serde_json::to_value(
                     result.map(|path| path.path().to_string_lossy().to_string()),
-                )?);
+                )?)
             }
             RequestInner::ShowSaveDirectoryDialog { title } => {
                 let dialog = rfd::AsyncFileDialog::new().set_title(title);
                 let result = dialog.pick_folder().await;
 
-                return Ok(serde_json::to_value(
+                Ok(serde_json::to_value(
                     result.map(|path| path.path().to_string_lossy().to_string()),
-                )?);
+                )?)
             }
 
             RequestInner::ExportProject => {
@@ -575,9 +582,9 @@ impl PluginUiImpl {
                     let params = params.read().await;
                     let project = params.project.clone().unwrap();
                     tokio::fs::write(destination.path(), project).await?;
-                    return Ok(serde_json::Value::Bool(true));
+                    Ok(serde_json::Value::Bool(true))
                 } else {
-                    return Ok(serde_json::Value::Bool(false));
+                    Ok(serde_json::Value::Bool(false))
                 }
             }
 
@@ -596,9 +603,9 @@ impl PluginUiImpl {
                 let mut params = critical_params.write().await;
                 params.tracks = tracks.clone();
                 let mut new_channel_index = params.routing.channel_index.clone();
-                new_channel_index.retain(|track_id, _index| tracks.contains_key(&track_id));
+                new_channel_index.retain(|track_id, _index| tracks.contains_key(track_id));
                 for track_id in tracks.keys() {
-                    if !new_channel_index.contains_key(&track_id) {
+                    if !new_channel_index.contains_key(track_id) {
                         new_channel_index.insert(track_id.clone(), 0);
                     }
                 }
@@ -658,7 +665,7 @@ impl PluginUiImpl {
     }
 
     pub async fn terminate(self) -> Result<()> {
-        if let Err(_) = self.manager_sender.send(ManagerMessage::Stop) {
+        if self.manager_sender.send(ManagerMessage::Stop).is_err() {
             error!("failed to send stop signal");
         }
 

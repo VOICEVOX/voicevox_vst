@@ -27,7 +27,7 @@ impl SquareOscillator {
         if self.phase >= self.two_pi {
             self.phase -= self.two_pi;
         }
-        return y;
+        y
     }
 
     fn poly_blep(&self, offset: f32) -> f32 {
@@ -40,7 +40,7 @@ impl SquareOscillator {
 
         if t <= dt {
             let a = t / dt;
-            return a + a - a * a - 1.0;
+            a + a - a * a - 1.0
         } else if t >= 1.0 - dt {
             let a = (t - 1.0) / dt;
             return a * a + a + a + 1.0;
@@ -97,7 +97,7 @@ impl LowPassFilter {
         self.y2 = self.y1;
         self.y1 = y;
 
-        return y;
+        y
     }
 }
 
@@ -126,7 +126,7 @@ pub static RELEASE: f32 = 0.02;
 
 impl Amplifier {
     fn new(sample_rate: f32, attack: f32, decay: f32, sustain: f32, release: f32) -> Self {
-        if attack < 0.001 || decay < 0.001 || sustain < 0.0 || sustain > 1.0 || release < 0.001 {
+        if attack < 0.001 || decay < 0.001 || !(0.0..=1.0).contains(&sustain) || release < 0.001 {
             panic!("Invalid ADSR parameters.");
         }
         let dt = 1.0 / sample_rate;
@@ -172,7 +172,7 @@ impl Amplifier {
 
         self.t += self.dt;
 
-        return input * self.gain;
+        input * self.gain
     }
 
     fn exponential_decay(
@@ -188,7 +188,7 @@ impl Amplifier {
         } else {
             0.0
         };
-        return end_value + (start_value - end_value) * exp_factor;
+        end_value + (start_value - end_value) * exp_factor
     }
 }
 
@@ -234,7 +234,7 @@ impl SynthVoice {
         y = self.low_pass_filter.process(y);
         y = self.amplifier.process(y);
         self.frames += 1;
-        return Some(y * self.volume);
+        Some(y * self.volume)
     }
 
     pub fn note_off(&mut self) {
