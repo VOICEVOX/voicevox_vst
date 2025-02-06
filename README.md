@@ -1,0 +1,2 @@
+# voicevox_vst
+VOICEVOXエディタのVSTプラグイン。
