@@ -93,7 +93,8 @@ endfunction()
 
 copy_assets_to_target(${VVVST_NAME}-vst3)
 if(TARGET ${VVVST_NAME}-au)
-  # DPFがビルド時に-exportを実行するので、それが落ちないようにコピー対象に含める
+  # DPFがビルド時に${VVVST_NAME}-exportを実行するので、それが落ちないようにDLLコピーを
+  # ${VVVST_NAME}-exportにも行う。
   copy_assets_to_target(${VVVST_NAME}-export)
   copy_assets_to_target(${VVVST_NAME}-au)
 endif()
