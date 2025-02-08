@@ -264,12 +264,12 @@ impl PluginUiImpl {
                     })
             })
             .with_url({
-                let base_url = if cfg!(debug_assertions) {
+                if cfg!(debug_assertions) {
                     option_env!("VVVST_DEV_SERVER_URL").unwrap_or("http://localhost:5173")
                 } else {
                     "app://vvvst.localhost/index.html"
-                };
-                format!("{}?engineStatus=notRunning", base_url)
+                }
+                .to_string()
             })
             .with_ipc_handler({
                 let manager_sender = manager_sender.clone();
