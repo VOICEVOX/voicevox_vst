@@ -28,9 +28,6 @@ pub struct Request {
     content = "payload"
 )]
 pub enum RequestInner {
-    GetVersion,
-    GetProjectName,
-
     GetConfig,
     SetConfig(String),
 
