@@ -36,6 +36,7 @@ pub enum ToManagerMessage {
     Hello,
     Ping,
     ChangeEnginePath,
+    OpenEngineDirectory,
     Start { use_gpu: bool, force_restart: bool },
 }
 

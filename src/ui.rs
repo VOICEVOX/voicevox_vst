@@ -649,6 +649,18 @@ impl PluginUiImpl {
                     .map_err(|_| anyhow::anyhow!("failed to send change engine path message"))?;
                 Ok(serde_json::Value::Null)
             }
+            RequestInner::OpenLogDirectory => {
+                open::that(common::log_dir())?;
+                Ok(serde_json::Value::Null)
+            }
+            RequestInner::OpenEngineDirectory => {
+                manager_sender
+                    .send(ManagerMessage::Send(
+                        manager::ToManagerMessage::OpenEngineDirectory,
+                    ))
+                    .map_err(|_| anyhow::anyhow!("failed to send open engine directory message"))?;
+                Ok(serde_json::Value::Null)
+            }
             RequestInner::LogInfo(message) => {
                 info!("webview: {}", message);
                 Ok(serde_json::Value::Null)

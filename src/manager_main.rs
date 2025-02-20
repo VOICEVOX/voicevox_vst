@@ -296,6 +296,13 @@ async fn handle_connection(mut stream: tokio::net::TcpStream) -> Result<()> {
                         info!("Start received");
                         start_engine(use_gpu, force_restart).await?;
                     }
+                    manager::ToManagerMessage::OpenEngineDirectory => {
+                        let store = load_store().await?;
+                        let engine_path = store.engine_path;
+                        if let Err(e) = open::that(engine_path.parent().unwrap()) {
+                            error!("failed to open engine directory: {:?}", e);
+                        }
+                    }
                 }
             }
         }

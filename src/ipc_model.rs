@@ -78,6 +78,9 @@ pub enum RequestInner {
     },
     ChangeEnginePath,
 
+    OpenLogDirectory,
+    OpenEngineDirectory,
+
     LogInfo(String),
     LogWarn(String),
     LogError(String),
