@@ -17,10 +17,11 @@ else()
   message(FATAL_ERROR "Unknown build type: ${CMAKE_BUILD_TYPE}")
 endif()
 
-# Windows：utf-8を使う、C4661（DPF内のテンプレート周りの警告）を無視
+# Windows：utf-8を使う、C4661（DPF内のテンプレート周りの警告）を無視、C++のランタイムを静的リンク
 if(MSVC)
   add_compile_options("/utf-8")
   add_compile_options("/wd4661")
+  set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 endif()
 
 dpf_add_plugin(

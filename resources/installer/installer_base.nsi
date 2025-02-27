@@ -92,13 +92,6 @@ Section "WebView2"
   ${EndIf}
 SectionEnd
 
-Section "Visual Studio Runtime"
-  SetOutPath "$INSTDIR"
-  File "resources\installer\external\vcredist_x64.exe"
-  ExecWait "$INSTDIR\vcredist_x64.exe /install /quiet /norestart"
-  Delete "$INSTDIR\vcredist_x64.exe"
-SectionEnd
-
 ;-------------------------------------------------------------------------------
 ; Uninstaller Sections
 Section "Uninstall"
