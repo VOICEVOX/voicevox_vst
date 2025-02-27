@@ -407,11 +407,12 @@ impl PluginUiImpl {
         zoom_sender: UnboundedSender<f64>,
         request: RequestInner,
     ) -> Result<serde_json::Value> {
-        let (params, critical_params) = {
+        let (params, critical_params, cached_voices) = {
             let plugin = plugin.lock().await;
             (
                 Arc::clone(&plugin.params),
                 Arc::clone(&plugin.critical_params),
+                Arc::clone(&plugin.cached_voices),
             )
         };
         match request {
@@ -441,13 +442,10 @@ impl PluginUiImpl {
                 params.project = Some(project.clone());
                 Ok(serde_json::Value::Null)
             }
-            RequestInner::GetVoice(key) => {
-                let plugin = plugin.lock().await;
-                let encoded_voices = plugin
-                    .params
+            RequestInner::GetCachedVoice(key) => {
+                let encoded_voices = cached_voices
                     .read()
                     .await
-                    .voices
                     .get(&key)
                     .map(|voice| base64.encode(&voice.bytes));
 
@@ -494,6 +492,12 @@ impl PluginUiImpl {
                             .map_err(anyhow::Error::from)
                     })
                     .collect::<Result<HashMap<_, _>>>()?;
+                {
+                    let mut cached_voices = cached_voices.write().await;
+                    for (key, value) in voices.iter() {
+                        cached_voices.insert(key.clone(), Voice::new(value.clone())?);
+                    }
+                }
                 {
                     let voices_ref = &mut params.write().await.voices;
                     for (audio_hash, voice) in voices {

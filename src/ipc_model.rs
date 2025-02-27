@@ -36,7 +36,7 @@ pub enum RequestInner {
 
     SetPhrases(Vec<Phrase>),
 
-    GetVoice(SingingVoiceKey),
+    GetCachedVoice(SingingVoiceKey),
     SetVoices(HashMap<SingingVoiceKey, String>),
 
     SetTracks(HashMap<TrackId, Track>),

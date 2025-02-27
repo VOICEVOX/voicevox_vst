@@ -1,6 +1,6 @@
 use crate::{
     common,
-    ipc_model::ChannelMode,
+    ipc_model::{ChannelMode, SingingVoiceKey},
     saturating_ext::SaturatingMath,
     state::{deserialize_state, serialize_state, CriticalPluginParams, Mixes, PluginParams},
     ui::UiNotification,
@@ -24,6 +24,8 @@ pub struct PluginImpl {
     pub params: Arc<RwLock<PluginParams>>,
     pub critical_params: Arc<RwLock<CriticalPluginParams>>,
     pub mix: Arc<RwLock<Mixes>>,
+
+    pub cached_voices: Arc<RwLock<HashMap<SingingVoiceKey, crate::voice::Voice>>>,
 
     prev_position: i64,
     prev_is_playing: bool,
@@ -88,6 +90,7 @@ impl PluginImpl {
             params: Arc::new(RwLock::new(params)),
             critical_params: Arc::new(RwLock::new(critical_params)),
             mix: Arc::new(RwLock::new(Mixes::default())),
+            cached_voices: Arc::new(RwLock::new(HashMap::new())),
 
             prev_position: 0,
             prev_is_playing: false,
