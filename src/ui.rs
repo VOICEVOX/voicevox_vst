@@ -441,16 +441,15 @@ impl PluginUiImpl {
                 params.project = Some(project.clone());
                 Ok(serde_json::Value::Null)
             }
-            RequestInner::GetVoices => {
+            RequestInner::GetVoice(key) => {
                 let plugin = plugin.lock().await;
                 let encoded_voices = plugin
                     .params
                     .read()
                     .await
                     .voices
-                    .iter()
-                    .map(|(key, value)| (key.clone(), base64.encode(value.to_vec())))
-                    .collect::<HashMap<_, _>>();
+                    .get(&key)
+                    .map(|voice| base64.encode(&voice.bytes));
 
                 Ok(serde_json::to_value(encoded_voices)?)
             }
