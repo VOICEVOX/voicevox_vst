@@ -1,0 +1,232 @@
+name: "Build"
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version"
+        required: true
+        default: "255.255.255"
+
+  push:
+  pull_request:
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build-editor:
+    runs-on: ubuntu-latest
+    outputs:
+      editor_sha: ${{ steps.emit-information.outputs.editor_sha }}
+    steps:
+      - name: Checkout Voicevox
+        uses: actions/checkout@v4
+        with:
+          repository: "voicevox/voicevox"
+          ref: "project-vst"
+
+      - name: Checkout VST
+        uses: actions/checkout@v4
+        with:
+          path: vvvst
+
+      - name: Checkout Product Version Resource
+        uses: actions/checkout@v4
+        with:
+          repository: VOICEVOX/voicevox_resource
+          ref: "0.22.2"
+          path: resource
+
+      - name: Create and replace software resources
+        run: |
+          rm build/README.txt
+          rm public/policy.md
+          {
+            cat resource/editor/README.md
+            echo
+            cat resource/editor/ACKNOWLEDGMENTS.md
+          } \
+          > build/README.txt
+          cp build/README.txt public/policy.md
+          cat vvvst/resources/editor_ext/vstinfo.md >> public/policy.md
+          curl https://steinbergmedia.github.io/vst3_dev_portal/resources/licensing_6.png -o ./public/res/vst_logo.png
+
+          cp resource/editor/PRIVACYPOLICY.md public/privacyPolicy.md
+
+          cat ./vvvst/resources/editor_ext/howtouse.md ./public/howtouse.md > ./public/howtouse.md.tmp
+          mv ./public/howtouse.md.tmp ./public/howtouse.md
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: |
+          pnpm install
+
+      - name: Generate public/licenses.json
+        run: |
+          pnpm run license:generate -o editor_licenses.json
+          pnpm run license:merge -o public/licenses.json -i editor_licenses.json -i vvvst/resources/editor_ext/licenses.generated.json
+
+      - name: Build
+        run: |
+          pnpm run vst:build
+
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: resource-editor
+          path: dist/
+
+      - name: Emit information
+        id: emit-information
+        run: |
+          EDITOR_SHA=$(git rev-parse HEAD)
+          echo "editor_sha=$EDITOR_SHA" >> $GITHUB_OUTPUT
+
+  build-each:
+    needs:
+      - build-editor
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-24.04]
+        include:
+          - os: windows-latest
+            name: "windows"
+          - os: macos-latest
+            name: "macos"
+          # engine-managerがまだAppImageに対応していないため、Ubuntuのビルドを一時的に無効化している。
+          # TODO: 対応させたらコメントアウトを外す
+          # - os: ubuntu-24.04
+          #   name: "linux"
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Colorize
+        run: |
+          echo "CLICOLOR_FORCE=1" >> $GITHUB_ENV
+      - name: Checkout VST
+        uses: actions/checkout@v4
+        with:
+          submodules: "recursive"
+      - name: Determine Information
+        id: determine-information
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            let version = github.ref_name || ${{ toJSON(github.event.inputs.version) }};
+            if (!version) {
+              version = "255.255.255";
+            }
+            core.setOutput('zip_name', `VOICEVOX_VST-${version}-${{ matrix.name }}.vst3.zip`);
+            core.setOutput('au_name', `VOICEVOX_VST-${version}-${{ matrix.name }}.au.zip`);
+      - name: Setup Rust
+        run: rustup toolchain install stable --profile minimal
+
+      - name: Cache
+        uses: Swatinem/rust-cache@v2
+      - name: Download Editor
+        uses: actions/download-artifact@v4
+        with:
+          name: resource-editor
+          path: resources/editor
+
+
+      - name: Install dependencies (macOS)
+        if: matrix.os == 'macos-latest'
+        run: |
+          brew install llvm
+
+          echo "/usr/local/opt/llvm/bin" >> $GITHUB_PATH
+          echo 'LDFLAGS=-L/opt/homebrew/opt/llvm/lib' >> $GITHUB_ENV
+          echo 'CPPFLAGS=-I/opt/homebrew/opt/llvm/include' >> $GITHUB_ENV
+          echo 'CC=clang' >> $GITHUB_ENV
+          echo 'CXX=clang++' >> $GITHUB_ENV
+
+      - name: Install dependencies (Ubuntu)
+        if: matrix.os == 'ubuntu-24.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libglib2.0-dev libgtk-3-dev libsoup-3.0-dev libjavascriptcoregtk-4.1-dev libwebkit2gtk-4.1-dev libasound2-dev
+
+          echo "CC=gcc-14" >> $GITHUB_ENV
+          echo "CXX=g++-14" >> $GITHUB_ENV
+
+      - name: Build
+        run: |
+          cargo xtask build --release
+
+      - name: Package
+        run: |
+          cd build/release/bin/
+          7z a -tzip ${{ steps.determine-information.outputs.zip_name }} voicevox.vst3
+          cp ${{ steps.determine-information.outputs.zip_name }} ../../../
+
+      - name: Package AU
+        if: matrix.os == 'macos-latest'
+        run: |
+          cd build/release/bin/
+          7z a -tzip ${{ steps.determine-information.outputs.au_name }} voicevox.component
+          cp ${{ steps.determine-information.outputs.au_name }} ../../../
+
+      - name: Build installer (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          cargo xtask generate-installer
+          cp ./build/VOICEVOX_VST-*-windows-setup.exe ./
+
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ matrix.name }}
+          path: |
+            ${{ steps.determine-information.outputs.zip_name }}
+            ${{ steps.determine-information.outputs.au_name }}
+            VOICEVOX_VST-*-windows-setup.exe
+
+  release:
+    needs:
+      - build-editor
+      - build-each
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main'))
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: build
+          merge-multiple: true
+          pattern: build-*
+
+      - name: Determine Information
+        id: determine-information
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            let version = github.ref_name || ${{ toJSON(github.event.inputs.version) }};
+            if (!version) {
+              version = "255.255.255";
+            }
+            core.setOutput('ref_name', version);
+            core.setOutput('prerelease', version === "255.255.255" || version.includes("-"));
+
+      - name: Upload
+        uses: softprops/action-gh-release@v2
+        with:
+          body: |
+            Rust SHA: ${{ github.sha }}
+            Editor SHA: https://github.com/sevenc-nanashi/voicevox/commit/${{ needs.build-editor.outputs.editor_sha }}
+          prerelease: ${{ steps.determine-information.outputs.prerelease }}
+          files: |
+            build/*
+          tag_name: ${{ steps.determine-information.outputs.ref_name }}

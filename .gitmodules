@@ -1,0 +1,9 @@
+[submodule "deps/dpf"]
+	path = deps/dpf
+	url = https://github.com/distrho/DPF.git
+[submodule "deps/choc"]
+	path = deps/choc
+	url = https://github.com/Tracktion/choc
+[submodule "deps/whereami"]
+	path = deps/whereami
+	url = https://github.com/gpakosz/whereami
